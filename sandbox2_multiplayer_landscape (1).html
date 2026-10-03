@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Sandbox 2</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#111;color:#fff}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#ffd43b;color:#171717}
+button:active{transform:scale(.96)}
+.hidden{display:none!important}
+#menu{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 50% 35%,#fff8b0 0,#9ee7ff 18%,#5b8cff 45%,#172554 75%,#07111f 100%);display:flex;align-items:center;justify-content:center;text-align:center}
+.card{background:#ffffffee;color:#14213d;padding:28px;border-radius:20px;box-shadow:0 15px 50px #0008;width:min(420px,90vw)}
+.card h1{font-size:42px;margin:0 0 8px;color:#164e9b;text-shadow:0 0 8px #fff,0 0 20px #6ee7ff}.card p{color:#334155}
+#game{position:fixed;inset:0;background:#4e9f55}
+#world{position:absolute;width:2400px;height:1600px;background:
+linear-gradient(90deg,#4e9f55 0 45%,#555 45% 55%,#4e9f55 55%),
+linear-gradient(#4e9f55 0 45%,#555 45% 55%,#4e9f55 55%);
+transition:filter .2s}
+.road{position:absolute;background:#555;border:3px solid #777}
+.road.h{left:0;top:720px;width:2400px;height:160px}.road.v{left:1120px;top:0;width:160px;height:1600px}
+.building{position:absolute;border:6px solid #333;border-radius:12px;box-shadow:0 12px #222}
+.bank{left:450px;top:330px;width:330px;height:220px;background:#ddd;color:#222;text-align:center;padding:20px}
+.house{width:230px;height:170px;background:#c98b5b}.h1{left:150px;top:430px}.h2{left:1740px;top:380px}.h3{left:1580px;top:1050px}
+.roof{position:absolute;left:-18px;top:-55px;width:250px;height:75px;background:#8e3030;transform:skewX(-30deg);border:5px solid #512020}
+.door{position:absolute;bottom:0;left:90px;width:50px;height:78px;background:#4b2b18}.win{position:absolute;top:45px;width:48px;height:48px;background:#74d9ff;border:5px solid #333}.w1{left:20px}.w2{right:20px}
+#player{position:absolute;width:42px;height:60px;background:#1673bd;border:4px solid #082f52;border-radius:12px;z-index:20;transform-origin:center}
+#player:before{content:"";position:absolute;width:30px;height:30px;background:#f0bd91;border:3px solid #633;border-radius:50%;left:2px;top:-30px}
+.car{position:absolute;width:110px;height:52px;border:5px solid #421;border-radius:16px;background:#d33;z-index:10;box-shadow:0 8px 0 #222}
+.car:before{content:"";position:absolute;left:20px;top:7px;width:62px;height:22px;background:#8bd7ff;border:3px solid #234;border-radius:6px}
+.wheel{position:absolute;width:27px;height:27px;background:#111;border-radius:50%;bottom:-16px}.wl{left:8px}.wr{right:8px}
+#hud{position:fixed;z-index:50;left:10px;top:10px;background:#111d;padding:10px;border-radius:14px;min-width:180px}
+#actions{position:fixed;z-index:50;right:10px;top:10px;width:min(300px,48vw);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;justify-content:end}
+#actions button{min-width:0;white-space:nowrap}
+@media(max-width:600px){
+ #actions{right:8px;top:8px;width:46vw;max-width:250px;grid-template-columns:1fr 1fr;gap:5px}
+ #actions button{padding:8px 5px;font-size:13px}
+}
+#controls{position:fixed;z-index:60;left:15px;bottom:15px;width:150px;height:150px;touch-action:none}
+.pad{position:absolute;width:50px;height:50px;background:#111b;border:2px solid #fff5;border-radius:14px;color:#fff;font-size:20px}
+.pad{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer}
+.pad.pressed{transform:scale(.92);background:#263b2a}
+.up{left:50px;top:0}.down{left:50px;bottom:0}.left{left:0;top:50px}.right{right:0;top:50px}
+#panel,#settings{position:fixed;z-index:90;inset:50% auto auto 50%;transform:translate(-50%,-50%);background:#111f;padding:20px;border-radius:18px;width:min(430px,92vw);box-shadow:0 20px 70px #000b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#toast{position:fixed;z-index:120;bottom:25px;left:50%;transform:translateX(-50%);background:#111e;padding:12px 18px;border-radius:12px}
+.rainbow{position:fixed;z-index:35;left:0;right:0;top:16%;height:220px;pointer-events:none;border-radius:50%;background:radial-gradient(ellipse at center,transparent 0 45%,#f00 46% 49%,#ff0 50% 53%,#0f0 54% 57%,#0ff 58% 61%,#35f 62% 65%,#a0f 66% 69%,transparent 70%);opacity:.75}
+.shake{animation:shake .12s infinite}@keyframes shake{0%{transform:translate(2px,1px)}50%{transform:translate(-2px,-1px)}100%{transform:translate(1px,-2px)}}
+#touchHint{position:fixed;right:10px;bottom:12px;z-index:50;background:#111b;padding:8px;border-radius:9px}
+</style>
+
+<style>
+</style>
+
+<style id="sandbox2-upgrade">
+#world{background:#58a957!important;background-image:radial-gradient(circle at 20% 20%,#8acb75 0 2%,transparent 2.5%),radial-gradient(circle at 75% 70%,#3f8d49 0 3%,transparent 3.5%)!important}
+.road.h{background:repeating-linear-gradient(90deg,#505050 0 55px,#666 55px 105px)!important}
+.road.v{background:repeating-linear-gradient(0deg,#505050 0 55px,#666 55px 105px)!important}
+.field{position:absolute;left:1450px;top:720px;width:800px;height:520px;background:#218c45;border:12px solid #eee;box-shadow:0 18px 35px #0008;z-index:3}
+.field:before{content:"";position:absolute;left:50%;top:0;width:6px;height:100%;background:#fff;transform:translateX(-50%)}
+.field:after{content:"";position:absolute;left:50%;top:50%;width:150px;height:150px;border:6px solid #fff;border-radius:50%;transform:translate(-50%,-50%)}
+.field .goal{position:absolute;top:190px;width:45px;height:140px;border:6px solid #fff;background:#ffffff22}
+.field .g1{left:-12px}.field .g2{right:-12px}
+.npc{position:absolute;width:38px;height:55px;background:linear-gradient(#e94b4b,#a51e1e);border:4px solid #5a1111;border-radius:12px;z-index:12;box-shadow:0 7px 0 #431010,0 10px 14px #0006}
+.npc:before{content:"";position:absolute;width:28px;height:28px;left:1px;top:-29px;background:#efbd91;border:3px solid #633;border-radius:50%}
+.darkness{position:fixed;inset:0;background:#000d;z-index:80;pointer-events:none}
+.event-on{animation:s2pulse .35s infinite alternate}
+@keyframes s2pulse{from{filter:brightness(.75) saturate(1)}to{filter:brightness(1.15) saturate(1.5)}}
+
+/* city update */
+#menu:before{content:"";position:absolute;inset:0;background:radial-gradient(circle,#fff8 0 1px,transparent 2px);background-size:32px 32px;opacity:.45;animation:stars 5s linear infinite}
+@keyframes stars{to{background-position:32px 32px}}
+#menu .card{position:relative;border:2px solid #fff;box-shadow:0 0 15px #fff,0 0 40px #55cfff,0 20px 70px #001b4d99}
+#menu .card button{box-shadow:0 0 10px #7dd3fc,0 5px 15px #0b3b7a55}
+#actions .combat{background:linear-gradient(#ff8a8a,#e11d48);color:#fff;border:2px solid #fff;min-height:52px;font-size:15px;box-shadow:0 0 12px #f43f5e88}
+#actions .drive{background:linear-gradient(#67e8f9,#0891b2);color:#042f3c;border:2px solid #fff}
+.wanted{color:#ffd43b;font-size:20px;letter-spacing:2px}
+.zone{position:absolute;border:5px solid #334155;border-radius:14px;box-shadow:0 10px 25px #0006;text-align:center;font-weight:900;z-index:4;padding-top:12px}
+.shopZone{left:800px;top:300px;width:280px;height:170px;background:#f5b942;color:#3b2200}
+.policeZone{left:250px;top:1030px;width:360px;height:220px;background:#dbeafe;color:#123a66}
+.serviceZone{left:1750px;top:1280px;width:420px;height:210px;background:#94a3b8;color:#111827}
+.zone .door2{position:absolute;bottom:0;left:50%;width:50px;height:65px;background:#334155;transform:translateX(-50%);border-radius:8px 8px 0 0}
+.policeCar{position:absolute;width:118px;height:54px;border:5px solid #172554;border-radius:16px;background:linear-gradient(90deg,#fff 0 45%,#2563eb 45% 100%);z-index:18;box-shadow:0 8px 0 #111}
+.policeCar:before{content:"🚨";position:absolute;left:43px;top:-25px;font-size:20px}
+.policeCar:after{content:"";position:absolute;left:18px;top:8px;width:70px;height:20px;background:#bfe8ff;border:3px solid #172554;border-radius:6px}
+.damageFlash{position:absolute;inset:0;background:#fff;opacity:.75;pointer-events:none;z-index:70}
+#wantedBox{margin-top:4px}
+#wantedStars{font-weight:900}
+#policeNotice{position:fixed;z-index:75;top:80px;left:50%;transform:translateX(-50%);background:#172554dd;color:#fff;padding:8px 14px;border-radius:12px;display:none}
+#actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:600px){#actions{width:52vw;max-width:280px}.combat{min-height:48px!important;font-size:14px!important}}
+
+
+/* new events */
+#rainOverlay{position:fixed;inset:0;z-index:66;pointer-events:none;background:repeating-linear-gradient(110deg,transparent 0 18px,#9bd7ff88 19px 21px,transparent 22px 36px);animation:rainMove .45s linear infinite;display:none}
+@keyframes rainMove{to{background-position:-80px 180px}}
+#fogOverlay{position:fixed;inset:0;z-index:65;pointer-events:none;background:radial-gradient(circle,#ffffff18 0 20%,#cbd5e155 55%,#64748b99 100%);backdrop-filter:blur(2px);display:none}
+#moneyRain{position:fixed;inset:0;z-index:67;pointer-events:none;overflow:hidden;display:none}
+.coinFall{position:absolute;font-size:25px;animation:coinFall 2.4s linear forwards}
+@keyframes coinFall{from{transform:translateY(-60px) rotate(0)}to{transform:translateY(110vh) rotate(540deg)}}
+.lowGravity #world{filter:saturate(1.25)}
+.trafficJam .car{animation:carWiggle .5s infinite alternate}
+@keyframes carWiggle{to{transform:translateX(8px)}}
+.partyPulse #world{animation:partyPulse .35s infinite alternate}
+@keyframes partyPulse{from{filter:hue-rotate(0deg) saturate(1)}to{filter:hue-rotate(35deg) saturate(1.5)}}
+#eventTimer{position:fixed;z-index:100;top:48px;left:50%;transform:translateX(-50%);background:#111d;color:#fff;padding:7px 12px;border-radius:12px;display:none;font-weight:900}
+/* extra event visuals */
+#floodOverlay,#tornadoOverlay,#heatOverlay,#slowOverlay,#teleportOverlay,#mirrorOverlay,#meteorOverlay,#partyLights{position:fixed;inset:0;pointer-events:none;display:none}
+#floodOverlay{z-index:63;background:linear-gradient(180deg,transparent 0 55%,#2563eb99 56% 100%);animation:floodMove 1.2s infinite alternate}
+@keyframes floodMove{to{filter:hue-rotate(12deg);opacity:.8}}
+#tornadoOverlay{z-index:68;background:radial-gradient(ellipse at 50% 50%,transparent 0 18%,#94a3b855 19% 24%,transparent 25% 32%,#64748b66 33% 38%,transparent 39% 100%);animation:tornadoSpin 1.2s linear infinite}
+@keyframes tornadoSpin{to{transform:rotate(360deg) scale(1.08)}}
+#heatOverlay{z-index:63;background:linear-gradient(#f9731644,#ef444433);animation:heatPulse .5s infinite alternate}
+@keyframes heatPulse{to{opacity:.55}}
+#slowOverlay{z-index:64;background:radial-gradient(circle at 50% 50%,transparent,#312e8155 90%)}
+#teleportOverlay{z-index:110;background:#fff;opacity:0;animation:teleFlash .45s ease-out}
+@keyframes teleFlash{0%{opacity:.9}100%{opacity:0}}
+#mirrorOverlay{z-index:62;background:linear-gradient(90deg,#0001 49%,#fff2 50%,#0001 51%);mix-blend-mode:screen}
+#meteorOverlay{z-index:67;overflow:hidden}
+.meteor{position:absolute;width:10px;height:60px;background:linear-gradient(#fff,#f97316,transparent);border-radius:50%;transform:rotate(35deg);animation:meteorFall 1.8s linear forwards}
+@keyframes meteorFall{from{transform:translate(-10vw,-20vh) rotate(35deg)}to{transform:translate(120vw,120vh) rotate(35deg)}}
+#partyLights{z-index:61;background:radial-gradient(circle at 20% 20%,#f43f5e44 0 4%,transparent 5%),radial-gradient(circle at 80% 30%,#22d3ee44 0 5%,transparent 6%),radial-gradient(circle at 50% 80%,#facc1544 0 5%,transparent 6%);animation:lightsMove .7s infinite alternate}
+@keyframes lightsMove{to{filter:hue-rotate(120deg);transform:scale(1.04)}}
+
+</style>
+
+<style id="sandbox2-3d-jail">
+/* 3D-style city upgrade */
+#world{perspective:1200px;transform-style:preserve-3d}
+.building,.zone,.car,.policeCar,.npc,.field{transform-style:preserve-3d}
+.building,.zone{box-shadow:0 18px 0 #17202a,0 28px 30px #0007}
+.building:after,.zone:after{content:"";position:absolute;left:10px;right:-12px;bottom:-18px;height:18px;background:#1e293b;transform:skewX(-38deg);transform-origin:top;opacity:.8;z-index:-1}
+.house{background:linear-gradient(135deg,#dca06d,#a95f3f 70%,#7f3f2f)!important}
+.bank{background:linear-gradient(135deg,#f8fafc,#cbd5e1 55%,#94a3b8)!important}
+.roof{box-shadow:12px 10px 0 #3f1515,18px 17px 15px #0006}
+.car,.policeCar{box-shadow:0 9px 0 #171717,0 18px 18px #0007}
+.npc{box-shadow:0 7px 0 #431010,0 14px 18px #0006}
+.field{box-shadow:0 18px 0 #166534,0 30px 35px #0008}
+#world:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,transparent 0 45%,#ffffff0d 46% 50%,transparent 51%),radial-gradient(circle at 50% 50%,transparent 0 50%,#0002 100%);z-index:2}
+#jailZone{left:680px;top:1060px;width:330px;height:230px;background:linear-gradient(135deg,#64748b,#334155);color:#fff;}
+#jailZone .bars{position:absolute;left:25px;right:25px;top:75px;height:90px;background:repeating-linear-gradient(90deg,#e2e8f0 0 7px,transparent 7px 32px);border:4px solid #cbd5e1;border-radius:8px}
+#jailZone .door2{background:#0f172a}
+#jailNotice{position:fixed;z-index:125;inset:0;display:none;align-items:center;justify-content:center;background:#020617cc;backdrop-filter:blur(4px)}
+#jailNotice .jcard{width:min(390px,88vw);background:linear-gradient(145deg,#334155,#0f172a);border:2px solid #94a3b8;border-radius:22px;padding:24px;text-align:center;box-shadow:0 20px 70px #000b}
+#jailNotice .jcard h2{font-size:30px;margin:0 0 8px}
+#arrestTimer{font-size:42px;font-weight:900;margin:10px}
+#wantedBox{padding:4px 8px;border-radius:10px;background:#0005}
+#policeNotice{box-shadow:0 0 18px #ef444488}
+/* New event visuals */
+#nightOverlay,#stormOverlay,#blackoutOverlay,#ufoOverlay,#confettiOverlay{position:fixed;inset:0;pointer-events:none;display:none}
+#nightOverlay{z-index:64;background:linear-gradient(#02061788,#02061755),radial-gradient(circle at 50% 35%,transparent 0 15%,#0009 75%);mix-blend-mode:multiply}
+#stormOverlay{z-index:66;background:repeating-linear-gradient(115deg,transparent 0 22px,#60a5fa33 23px 25px,transparent 26px 48px);animation:stormMove .25s linear infinite}
+@keyframes stormMove{to{background-position:-120px 180px}}
+#blackoutOverlay{z-index:79;background:#000e}
+#ufoOverlay{z-index:68}
+.ufo{position:absolute;width:110px;height:38px;border-radius:50%;background:linear-gradient(#cbd5e1,#64748b);box-shadow:0 0 20px #67e8f9,0 0 50px #22d3ee}
+.ufo:after{content:"";position:absolute;left:25px;right:25px;bottom:-35px;height:45px;background:linear-gradient(transparent,#67e8f988,transparent);clip-path:polygon(25% 0,75% 0,100% 100%,0 100%)}
+#confettiOverlay{z-index:69;overflow:hidden}
+.confetti{position:absolute;top:-30px;font-size:24px;animation:confettiFall 3s linear forwards}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg)}}
+.storming #world{filter:brightness(.75) saturate(1.3)}
+.nightMode #world{filter:brightness(.52) saturate(.85)}
+.blackoutMode #hud,.blackoutMode #actions{filter:brightness(.25)}
+.policeBeacon{animation:beacon .25s infinite alternate}
+@keyframes beacon{from{filter:none}to{filter:drop-shadow(0 0 12px #60a5fa)}}
+</style>
+
+
+<style id="mobile-fix">
+#menu{padding:12px;overflow:auto;-webkit-overflow-scrolling:touch}
+#menu .card{width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:22px 18px}
+#menu .card h1{font-size:clamp(32px,10vw,42px)}
+.menu-info{margin-top:14px;text-align:left;background:#0f172a0d;padding:11px;border-radius:12px;line-height:1.55;font-size:14px}
+#settings{max-height:90dvh;overflow:auto}
+#panel{max-height:90dvh;overflow:auto}
+@media(max-width:600px){
+  #hud{font-size:13px;min-width:145px;padding:8px}
+  #actions{width:48vw;max-width:235px}
+  #actions button{font-size:12px;padding:8px 4px}
+  #controls{transform:scale(.9);transform-origin:left bottom}
+  #touchHint{font-size:11px;max-width:140px}
+}
+</style>
+
+<style id="landscape-fix">
+/* Адаптация Sandbox 2 под альбомный экран телефона */
+html,body{width:100%;height:100%;overflow:hidden}
+@media (orientation:landscape){
+  #mpMenu{
+    align-items:center;
+    justify-content:center;
+    padding:8px 16px;
+    overflow-y:auto;
+  }
+  #mpCard{
+    width:min(760px,92vw);
+    max-height:94vh;
+    overflow-y:auto;
+    padding:14px 22px;
+    border-radius:16px;
+  }
+  #mpCard h2{font-size:22px;margin:0 0 6px}
+  #mpCard input{padding:9px;margin:3px 0 5px}
+  #mpCard button{min-height:42px}
+  #mpCard label{margin-top:4px!important}
+  #mpStatus{margin:5px 0}
+  #mpRoom{margin:4px 0}
+  #mpPlayers{max-height:70px}
+}
+@media (orientation:portrait) and (max-width:600px){
+  #mpCard{max-height:92vh;overflow-y:auto}
+}
+</style>
+
+</head>
+<body>
+
+<style id="multiplayer-ui">
+#mpMenu{position:fixed;inset:0;z-index:140;background:#07111fee;display:flex;align-items:center;justify-content:center;padding:16px}
+#mpCard{width:min(430px,94vw);background:#fff;color:#14213d;border-radius:20px;padding:22px;box-shadow:0 20px 80px #000}
+#mpCard h2{margin:0 0 10px}
+#mpCard input{width:100%;padding:12px;border:2px solid #cbd5e1;border-radius:10px;margin:5px 0 8px;font-size:16px}
+#mpStatus{min-height:22px;margin:8px 0;font-weight:700}
+#mpRoom{font-size:24px;font-weight:900;letter-spacing:4px;text-align:center;margin:8px 0}
+#mpPlayers{background:#0f172a;color:#fff;border-radius:10px;padding:9px;margin-top:10px;max-height:130px;overflow:auto}
+#mpBadge{position:fixed;z-index:61;right:10px;bottom:10px;background:#111d;padding:8px 10px;border-radius:10px;font-size:12px}
+#mpPlayersHud{position:fixed;z-index:50;left:10px;top:125px;background:#111d;padding:8px;border-radius:12px;min-width:180px;font-size:12px}
+.remotePlayer{position:absolute;width:42px;height:60px;background:#f59e0b;border:4px solid #713f12;border-radius:12px;z-index:19;transform-origin:center}
+.remotePlayer:before{content:"";position:absolute;width:30px;height:30px;background:#f0bd91;border:3px solid #633;border-radius:50%;left:2px;top:-30px}
+.remoteName{position:absolute;left:50%;transform:translateX(-50%);top:-55px;white-space:nowrap;background:#111d;color:#fff;padding:3px 7px;border-radius:7px;font-size:11px}
+.mp-hidden{display:none!important}
+</style>
+<div id="mpMenu">
+  <div id="mpCard">
+    <h2>🌐 Sandbox 2 — Мультиплеер</h2>
+    <input id="mpName" maxlength="16" placeholder="Твой ник" value="Игрок">
+    <label style="display:block;margin-top:8px;font-weight:700">Адрес сервера</label>
+    <input id="mpServer" maxlength="180" placeholder="wss://твой-сервер.onrender.com">
+    <button onclick="mpSaveServer()" style="width:100%;background:#e2e8f0">💾 Сохранить адрес сервера</button>
+    <div style="font-size:12px;color:#64748b;margin:5px 0 8px">Для Render используй wss://, например wss://мой-сервер.onrender.com</div>
+    
+    <button onclick="mpCreate()" style="width:100%">Создать комнату</button>
+    <input id="mpCodeInput" maxlength="8" placeholder="Код комнаты">
+    <button onclick="mpJoin()" style="width:100%">Войти в комнату</button>
+    <div id="mpStatus">Выбери создание или вход в комнату.</div>
+    <div id="mpRoom"></div>
+    <div id="mpPlayers">Игроки: 0</div>
+    <button onclick="mpPlayOffline()" style="width:100%;margin-top:8px;background:#cbd5e1">🎮 Играть без сети</button>
+    <button onclick="mpLandscape()" style="width:100%;margin-top:6px;background:#e2e8f0">📱 Альбомный режим</button>
+  </div>
+</div>
+<div id="mpBadge" class="mp-hidden">🟢 Онлайн</div>
+<div id="mpPlayersHud" class="mp-hidden">👥 Онлайн: <span id="mpCount">1</span></div>
+
+
+<div id="menu">
+ <div class="card">
+  <h1>🎮 Sandbox 2</h1>
+  <p>Городской sandbox: дороги, банк, магазин, машины, полиция и тюрьма.</p>
+  <button onclick="openMP()" style="font-size:20px;width:100%">▶ ИГРАТЬ</button>
+  <button onclick="openSettings()" style="width:100%;margin-top:8px">⚙ НАСТРОЙКИ</button>
+  <div class="menu-info">
+   <b>🆕 В этой версии</b>
+   <div>🚗 Машины и езда · 🏦 Банк · 🛒 Магазин</div>
+   <div>⭐ Розыск · 🚓 Полиция · 🔒 Арест и тюрьма</div>
+   <div>🌧️ Ивенты · 🏙️ 3D-город · 🏟️ Футбольное поле</div>
+  </div>
+ </div>
+</div>
+<div id="game" class="hidden">
+ <div id="world">
+  <div class="road h"></div><div class="road v"></div><div class="field"><div class="goal g1"></div><div class="goal g2"></div></div>
+  <div class="building bank"><h2>🏦 БАНК</h2><p>Работа и деньги</p><small>Подойди сюда и получи зарплату</small></div>
+  <div class="zone shopZone">🛒 МАГАЗИН<div class="door2"></div></div>
+  <div class="zone policeZone">🚓 ПОЛИЦЕЙСКИЙ УЧАСТОК<div class="door2"></div><div style="margin-top:15px;font-size:13px">Здесь начинается и заканчивается розыск</div></div>
+  <div class="zone" id="jailZone">🔒 ТЮРЬМА<div class="bars"></div><div class="door2"></div><div style="margin-top:145px;font-size:13px">Арестованные находятся здесь</div></div>
+  <div class="zone serviceZone">🔧 АВТОСЕРВИС<div class="door2"></div><div style="margin-top:15px;font-size:13px">Ремонт и машины</div></div>
+  <div class="building house h1"><div class="roof"></div><div class="door"></div><div class="win w1"></div><div class="win w2"></div></div>
+  <div class="building house h2"><div class="roof"></div><div class="door"></div><div class="win w1"></div><div class="win w2"></div></div>
+  <div class="building house h3"><div class="roof"></div><div class="door"></div><div class="win w1"></div><div class="win w2"></div></div>
+  <div class="car" id="car1" style="left:900px;top:650px"><i class="wheel wl"></i><i class="wheel wr"></i></div>
+  <div class="car" id="car2" style="left:1450px;top:760px;background:#36c"><i class="wheel wl"></i><i class="wheel wr"></i></div>
+  <div class="policeCar hidden" id="policeCar" style="left:650px;top:1080px"></div>
+  <div class="npc" id="npc1" style="left:500px;top:850px"></div><div class="npc" id="npc2" style="left:760px;top:900px"></div><div class="npc" id="npc3" style="left:1320px;top:600px"></div><div class="npc" id="npc4" style="left:1600px;top:900px"></div><div class="npc" id="npc5" style="left:1850px;top:650px"></div><div class="npc" id="npc6" style="left:900px;top:1100px"></div><div id="player"></div>
+ </div>
+
+ <div id="hud">
+  💰 <span id="money">500</span><br>
+  ❤️ <span id="hp">100</span><br>
+  🚗 <span id="carState">Пешком</span>
+  <div id="wantedBox">⭐ <span id="wantedStars" class="wanted">☆☆☆☆☆</span></div>
+ </div>
+
+ <div id="actions">
+  <button class="drive" onclick="toggleCar()">🚗 ВОЙТИ / ВЫЙТИ</button>
+  <button class="shopBtn" onclick="toggleShop()">🛒 МАГАЗИН</button>
+  <button class="combat" onclick="fireWeapon()">🔥 ОГОНЬ</button>
+  <button class="combat" onclick="punch()">👊 УДАР</button>
+  <button onclick="jump()">🦘 ПРЫЖОК</button>
+  <button onclick="toggleAdmin()">👑 АДМИН</button>
+ </div>
+
+ <div id="controls" aria-label="Управление">
+  <button class="pad up" data-key="w">▲</button>
+  <button class="pad left" data-key="a">◀</button>
+  <button class="pad right" data-key="d">▶</button>
+  <button class="pad down" data-key="s">▼</button>
+ </div>
+ <div id="touchHint">WASD / кнопки — ходить</div>
+</div>
+<div id="policeNotice">🚨 РОЗЫСК! Полиция едет за тобой!</div>
+<div id="jailNotice"><div class="jcard"><h2>🚓 ТЫ АРЕСТОВАН</h2><p>Полиция остановила тебя и доставила в тюрьму.</p><div id="arrestTimer">8</div><small>Розыск будет снят после освобождения.</small></div></div>
+<div id="nightOverlay"></div><div id="stormOverlay"></div><div id="blackoutOverlay"></div><div id="ufoOverlay"></div><div id="confettiOverlay"></div><div id="floodOverlay"></div><div id="tornadoOverlay"></div><div id="heatOverlay"></div><div id="slowOverlay"></div><div id="teleportOverlay"></div><div id="mirrorOverlay"></div><div id="meteorOverlay"></div><div id="partyLights"></div>
+
+<div id="panel" class="hidden">
+ <h2>👑 ADMIN PANEL</h2>
+ <div class="grid">
+  <button onclick="adminMoney()">💰 +1000</button>
+  <button onclick="adminHeal()">❤️ Лечение</button>
+  <button onclick="eventRainbow()">🌈 Радуга</button>
+  <button onclick="eventEarthquake()">🌍 Землетрясение</button>
+  <button onclick="eventJump()">🦘 Суперпрыжок</button>
+  <button onclick="eventRain()">🌧️ Дождь</button>
+  <button onclick="eventFog()">🌫️ Туман</button>
+  <button onclick="eventLowGravity()">🪐 Низкая гравитация</button>
+  <button onclick="eventMoneyRain()">💰 Денежный дождь</button>
+  <button onclick="eventTraffic()">🚗 Автопробка</button>
+  <button onclick="eventParty()">🎉 Городская вечеринка</button>
+  <button onclick="eventNight()">🌙 Ночь</button>
+  <button onclick="eventStorm()">⚡ Гроза</button>
+  <button onclick="eventBlackout()">💡 Отключение света</button>
+  <button onclick="eventUFO()">🛸 НЛО</button>
+  <button onclick="eventConfetti()">🎊 Конфетти</button>
+  <button onclick="eventPoliceRush()">🚓 Полицейский рейд</button>
+  <button onclick="eventFlood()">🌊 Наводнение</button>
+  <button onclick="eventTornado()">🌪️ Торнадо</button>
+  <button onclick="eventHeat()">🔥 Жара</button>
+  <button onclick="eventSlowTime()">🕐 Замедление</button>
+  <button onclick="eventTeleport()">🌀 Телепорт</button>
+  <button onclick="eventMirror()">🪞 Перевёрнутый мир</button>
+  <button onclick="eventMeteor()">☄️ Метеоритный дождь</button>
+  <button onclick="eventLights()">💡 Световое шоу</button>
+  <button onclick="spawnCar()">🚗 Машина</button>
+  <button onclick="speedBoost()">⚡ Скорость</button>
+  <button onclick="eventReset()">🔄 Сброс событий</button><button onclick="darkAllEvents()">🌑 ТЬМА + ВСЕ ИВЕНТЫ</button>
+ </div>
+ <button onclick="toggleAdmin()" style="width:100%;margin-top:10px">Закрыть</button>
+</div>
+
+
+
+<div id="shop" class="hidden" style="position:fixed;z-index:95;inset:50% auto auto 50%;transform:translate(-50%,-50%);background:#111f;padding:20px;border-radius:18px;width:min(430px,92vw);box-shadow:0 20px 70px #000b">
+ <h2>🔫 МАГАЗИН ОРУЖИЯ</h2>
+ <p>💰 Баланс: <span id="shopMoney">500</span></p>
+ <div class="grid">
+  <button onclick="buyWeapon('pistol',100)">🔫 Пистолет — 100</button>
+  <button onclick="buyWeapon('smg',300)">🔫 ПП — 300</button>
+  <button onclick="buyWeapon('rifle',600)">🔫 Винтовка — 600</button>
+  <button onclick="equipWeapon('none')">🚶 Без оружия</button>
+ </div>
+ <p>Экипировано: <b id="weaponName">Нет</b></p>
+ <button onclick="toggleShop()" style="width:100%">Закрыть</button>
+</div>
+
+<div id="settings" class="hidden">
+ <h2>⚙ Настройки</h2>
+ <p><label><input id="shakeSetting" type="checkbox" checked> Эффект тряски</label></p>
+ <p><label><input id="touchSetting" type="checkbox" checked> Кнопки управления</label></p>
+ <button onclick="toggleSettings()">Готово</button>
+</div>
+<div id="rainOverlay"></div><div id="fogOverlay"></div><div id="moneyRain"></div><div id="eventTimer"></div>
+<div id="darkOverlay" class="darkness hidden"></div><div id="toast">Добро пожаловать!</div>
+
+<script>
+const world=document.getElementById("world"),game=document.getElementById("game"),player=document.getElementById("player");
+const moneyEl=document.getElementById("money"),hpEl=document.getElementById("hp"),carState=document.getElementById("carState");
+let x=1150,y=800,money=500,hp=100,keys={},inCar=false,superJump=false,boost=0,eventTimer=null;
+let wanted=0, wantedCooldown=null, policeActive=false, policeX=650, policeY=1080, carAngle=0;
+let arrested=false, arrestTimerId=null;
+const policeCar=document.getElementById("policeCar");
+let weapons={pistol:false,smg:false,rifle:false},equipped="none";
+const weaponLabels={none:"Нет",pistol:"Пистолет",smg:"ПП",rifle:"Винтовка"};
+function startGame(){
+ document.getElementById("menu").classList.add("hidden");
+ game.classList.remove("hidden");
+ say("Игра началась! Найди банк, магазин и автосервис.");
+}
+function say(t){document.getElementById("toast").textContent=t;clearTimeout(window._toast);window._toast=setTimeout(()=>document.getElementById("toast").textContent="",2500)}
+function touchKey(k,v){keys[k]=!!v}
+// Надёжное сенсорное управление: работает на Android через pointer events и удержание кнопки.
+const padButtons=document.querySelectorAll("#controls .pad");
+let activeTouchButtons=new Set();
+padButtons.forEach(btn=>{
+  const k=btn.dataset.key;
+  const press=e=>{if(e){e.preventDefault();e.stopPropagation()} touchKey(k,1);activeTouchButtons.add(k);btn.classList.add("pressed")};
+  const release=e=>{if(e){e.preventDefault();e.stopPropagation()} touchKey(k,0);activeTouchButtons.delete(k);btn.classList.remove("pressed")};
+  btn.addEventListener("pointerdown",press,{passive:false});
+  btn.addEventListener("pointerup",release,{passive:false});
+  btn.addEventListener("pointercancel",release,{passive:false});
+  btn.addEventListener("pointerleave",e=>{if(e.buttons===0) release(e)},{passive:false});
+  btn.addEventListener("touchstart",press,{passive:false});
+  btn.addEventListener("touchend",release,{passive:false});
+  btn.addEventListener("touchcancel",release,{passive:false});
+});
+window.addEventListener("pointerup",()=>{activeTouchButtons.forEach(k=>touchKey(k,0));activeTouchButtons.clear();padButtons.forEach(b=>b.classList.remove("pressed"))});
+window.addEventListener("blur",()=>{Object.keys(keys).forEach(k=>keys[k]=false)});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)Object.keys(keys).forEach(k=>keys[k]=false)});
+onkeydown=e=>{
+  const k=e.key.toLowerCase();
+  if(["w","a","s","d","arrowup","arrowleft","arrowdown","arrowright"," "].includes(k)||e.code==="Space") e.preventDefault();
+  const map={arrowup:"w",arrowleft:"a",arrowdown:"s",arrowright:"d"};
+  keys[map[k]||k]=true;
+  if(k==="e")toggleCar(); if(e.code==="Space")jump();
+};
+onkeyup=e=>{const k=e.key.toLowerCase();const map={arrowup:"w",arrowleft:"a",arrowdown:"s",arrowright:"d"};keys[map[k]||k]=false};
+
+function loop(){
+ if(arrested){requestAnimationFrame(loop);return;}
+ let dx=(keys.d?1:0)-(keys.a?1:0),dy=(keys.s?1:0)-(keys.w?1:0);
+ if(dx||dy){let l=Math.hypot(dx,dy),s=((inCar?8:4.5)+(boost?4:0))*(game.classList.contains("slowMode")?.35:1);x+=dx/l*s;y+=dy/l*s;carAngle=Math.atan2(dy,dx)*180/Math.PI}
+ x=Math.max(20,Math.min(2380,x));y=Math.max(20,Math.min(1580,y));
+ player.style.left=x+"px";player.style.top=y+"px";
+ player.style.display=inCar?"none":"block";
+ if(inCar){const activeCar=document.getElementById("car1");activeCar.style.left=(x-34)+"px";activeCar.style.top=(y+5)+"px";activeCar.style.transform=`rotate(${carAngle}deg)`;activeCar.style.zIndex=25}
+ world.style.transform=`translate(${innerWidth/2-x}px,${innerHeight/2-y}px)`;
+ updatePolice();
+ requestAnimationFrame(loop)
+}
+loop();
+
+function nearestNPC(){
+ let best=null,bd=99999;
+ s2npcs.forEach(n=>{if(n.out)return;let d=Math.hypot(n.x-x,n.y-y);if(d<bd){bd=d;best=n}});
+ return {n:best,d:bd};
+}
+function flash(){const f=document.createElement("div");f.className="damageFlash";game.appendChild(f);setTimeout(()=>f.remove(),70)}
+function hitNPC(kind){
+ const q=nearestNPC();
+ if(!q.n || q.d>150){say(kind==="fire"?"🔥 Нет NPC рядом для прицеливания":"👊 Подойди ближе к NPC");return}
+ q.n.hits=(q.n.hits||0)+1; flash();
+ if(q.n.hits>=3){q.n.out=true;const e=document.getElementById(q.n.id);if(e)e.style.display="none";addWanted();say("🚨 NPC исчез. Розыск +1 звезда");}
+ else say(kind==="fire"?"🔥 Попадание по NPC":"👊 Удар по NPC");
+}
+function fireWeapon(){
+ if(equipped==="none") return say("🔫 Сначала купи и экипируй оружие");
+ player.animate([{transform:"scale(1)"},{transform:"scale(1.15)"},{transform:"scale(1)"}],{duration:160});
+ hitNPC("fire");
+}
+function punch(){
+ player.animate([{transform:"translateX(0)"},{transform:"translateX(22px) rotate(4deg)"},{transform:"translateX(0)"}],{duration:240});
+ hitNPC("punch");
+}
+function jump(){player.animate([{transform:"translateY(0)"},{transform:"translateY(-90px)"},{transform:"translateY(0)"}],{duration:superJump?650:900});say(superJump?"🦘 Суперпрыжок!":"🦘 Прыжок!")}
+function toggleCar(){
+ const c=document.getElementById("car1");
+ if(!inCar){let cx=parseFloat(c.style.left)||900,cy=parseFloat(c.style.top)||650;if(Math.hypot(cx-x,cy-y)>180)return say("🚗 Подойди к красной машине");inCar=true;carState.textContent="В машине";say("🚗 Ты сел в машину. WASD — ехать");}
+ else{inCar=false;carState.textContent="Пешком";x+=55;player.style.display="block";say("🚶 Ты вышел из машины");}
+}
+function renderWanted(){document.getElementById("wantedStars").textContent="★".repeat(wanted)+"☆".repeat(5-wanted)}
+function addWanted(){
+ wanted=Math.min(5,wanted+1);renderWanted();
+ if(wanted>0){policeActive=true;policeCar.classList.remove("hidden");document.getElementById("policeNotice").style.display="block";}
+ clearTimeout(wantedCooldown);wantedCooldown=setTimeout(()=>{if(wanted>0){wanted--;renderWanted();if(wanted===0){policeActive=false;policeCar.classList.add("hidden");document.getElementById("policeNotice").style.display="none";say("✅ Розыск снят")}else wantedCooldown=setTimeout(arguments.callee,25000)}},30000)
+}
+function updatePolice(){
+ if(!policeActive)return;
+ const dx=x-policeX,dy=y-policeY,d=Math.hypot(dx,dy)||1;
+ const speed=1.8+wanted*.35;
+ policeX+=dx/d*speed;policeY+=dy/d*speed;
+ policeCar.style.left=policeX+"px";policeCar.style.top=policeY+"px";
+ policeCar.style.transform=`rotate(${Math.atan2(dy,dx)*180/Math.PI}deg)`;
+ if(d<78){arrestPlayer();}
+}
+
+function arrestPlayer(){
+ if(arrested)return;
+ arrested=true; policeActive=false; policeCar.classList.add("hidden");
+ document.getElementById("policeNotice").style.display="none";
+ inCar=false; carState.textContent="Пешком"; player.style.display="block";
+ x=820;y=1160; player.style.left=x+"px";player.style.top=y+"px";
+ wanted=0;renderWanted();
+ const box=document.getElementById("jailNotice");box.style.display="flex";
+ let left=8;document.getElementById("arrestTimer").textContent=left;
+ clearInterval(arrestTimerId);arrestTimerId=setInterval(()=>{
+   left--;document.getElementById("arrestTimer").textContent=Math.max(0,left);
+   if(left<=0){clearInterval(arrestTimerId);box.style.display="none";arrested=false;x=820;y=960;player.style.left=x+"px";player.style.top=y+"px";say("🔓 Ты вышел из тюрьмы")}
+ },1000);
+ say("🚓 Арест! Тебя доставили в тюрьму");
+}
+function toggleAdmin(){document.getElementById("panel").classList.toggle("hidden")}
+function toggleShop(){
+ document.getElementById("shop").classList.toggle("hidden");
+ document.getElementById("shopMoney").textContent=money;
+}
+function buyWeapon(id,cost){
+ if(weapons[id]) return equipWeapon(id);
+ if(money<cost) return say("❌ Недостаточно денег");
+ money-=cost; weapons[id]=true; moneyEl.textContent=money;
+ equipWeapon(id); say("🔫 Куплено: "+weaponLabels[id]);
+}
+function equipWeapon(id){
+ if(id!=="none" && !weapons[id]) return;
+ equipped=id;
+ document.getElementById("weaponName").textContent=weaponLabels[id];
+ say(id==="none"?"🚶 Оружие убрано":"🔫 Экипировано: "+weaponLabels[id]);
+}
+function openSettings(){document.getElementById("settings").classList.remove("hidden")}
+function toggleSettings(){document.getElementById("settings").classList.toggle("hidden");document.getElementById("controls").style.display=document.getElementById("touchSetting").checked?"block":"none"}
+
+function adminMoney(){money+=1000;moneyEl.textContent=money;say("👑 +1000 денег")}
+function adminHeal(){hp=100;hpEl.textContent=hp;say("❤️ Здоровье восстановлено")}
+function eventRainbow(){let r=document.querySelector(".rainbow");if(r){r.remove()}else{r=document.createElement("div");r.className="rainbow";document.body.appendChild(r);say("🌈 Радуга появилась!")}}
+function eventEarthquake(){if(!document.getElementById("shakeSetting").checked)return say("Тряска отключена");game.classList.add("shake");setTimeout(()=>game.classList.remove("shake"),2500);say("🌍 Землетрясение!")}
+function eventJump(){superJump=true;say("🦘 Суперпрыжок активирован на 20 секунд");setTimeout(()=>superJump=false,20000)}
+function speedBoost(){boost=1;say("⚡ Скорость увеличена на 15 секунд");setTimeout(()=>boost=0,15000)}
+function spawnCar(){let c=document.createElement("div");c.className="car";c.style.left=(x+120)+"px";c.style.top=y+"px";c.innerHTML='<i class="wheel wl"></i><i class="wheel wr"></i>';world.appendChild(c);say("🚗 Новая машина появилась")}
+function eventReset(){document.querySelector(".rainbow")?.remove();game.classList.remove("shake");superJump=false;boost=0;wanted=0;renderWanted();policeActive=false;policeCar.classList.add("hidden");document.getElementById("policeNotice").style.display="none";say("🔄 События и розыск сброшены")}
+
+const s2npcs=[{id:"npc1",x:500,y:850,dx:1,dy:0},{id:"npc2",x:760,y:900,dx:-1,dy:0},{id:"npc3",x:1320,y:600,dx:0,dy:1},{id:"npc4",x:1600,y:900,dx:-1,dy:0},{id:"npc5",x:1850,y:650,dx:0,dy:-1},{id:"npc6",x:900,y:1100,dx:1,dy:0}];
+function s2NpcLoop(){s2npcs.forEach(n=>{n.x+=n.dx*.8;n.y+=n.dy*.8;if(n.x<80||n.x>2320)n.dx*=-1;if(n.y<80||n.y>1520)n.dy*=-1;const e=document.getElementById(n.id);if(e){e.style.left=n.x+"px";e.style.top=n.y+"px";}});requestAnimationFrame(s2NpcLoop)}s2NpcLoop();
+function darkAllEvents(){const o=document.getElementById("darkOverlay");o.classList.remove("hidden");game.classList.add("event-on","shake");eventRainbow();eventEarthquake();eventJump();speedBoost();say("🌑 ТЬМА! Все ивенты активированы!");setTimeout(()=>{o.classList.add("hidden");game.classList.remove("event-on","shake")},12000)}
+
+let eventTimeouts=[];
+function eventClock(ms,label){const t=document.getElementById('eventTimer');clearTimeout(window.__eventTimerHide);t.textContent=label+' — '+Math.ceil(ms/1000)+'с';t.style.display='block';const started=Date.now();clearInterval(window.__eventClock);window.__eventClock=setInterval(()=>{const left=Math.max(0,ms-(Date.now()-started));t.textContent=label+' — '+Math.ceil(left/1000)+'с';if(left<=0){clearInterval(window.__eventClock);t.style.display='none'}},250);window.__eventTimerHide=setTimeout(()=>t.style.display='none',ms+100)}
+function eventRain(){const o=document.getElementById('rainOverlay');o.style.display=o.style.display==='block'?'none':'block';if(o.style.display==='block'){eventClock(15000,'🌧️ Дождь');say('🌧️ Начался дождь!')}else{say('☀️ Дождь закончился')}}
+function eventFog(){const o=document.getElementById('fogOverlay');o.style.display='block';eventClock(12000,'🌫️ Туман');say('🌫️ Город окутал туман');clearTimeout(window.__fog);window.__fog=setTimeout(()=>{o.style.display='none'},12000)}
+function eventLowGravity(){game.classList.add('lowGravity');superJump=true;eventClock(15000,'🪐 Низкая гравитация');say('🪐 Низкая гравитация!');clearTimeout(window.__gravity);window.__gravity=setTimeout(()=>{game.classList.remove('lowGravity');superJump=false},15000)}
+function eventMoneyRain(){const box=document.getElementById('moneyRain');box.innerHTML='';box.style.display='block';let total=0;for(let i=0;i<24;i++){const c=document.createElement('div');c.className='coinFall';c.textContent='💰';c.style.left=Math.random()*96+'vw';c.style.animationDelay=(Math.random()*1.4)+'s';box.appendChild(c);setTimeout(()=>{money+=50;total+=50;moneyEl.textContent=money;const sm=document.getElementById('shopMoney');if(sm)sm.textContent=money},Math.random()*1800+300)}eventClock(2500,'💰 Денежный дождь');say('💰 Денежный дождь! Собирай бонусы');setTimeout(()=>{box.style.display='none';box.innerHTML='';say('💰 Получено +'+total)},2600)}
+function eventTraffic(){game.classList.add('trafficJam');eventClock(12000,'🚗 Автопробка');say('🚗 На дорогах пробка!');clearTimeout(window.__traffic);window.__traffic=setTimeout(()=>game.classList.remove('trafficJam'),12000)}
+function eventParty(){game.classList.add('partyPulse');eventClock(12000,'🎉 Вечеринка');say('🎉 В городе вечеринка!');clearTimeout(window.__party);window.__party=setTimeout(()=>game.classList.remove('partyPulse'),12000)}
+
+function eventNight(){const o=document.getElementById('nightOverlay');o.style.display='block';game.classList.add('nightMode');eventClock(15000,'🌙 Ночь');say('🌙 Наступила ночь!');clearTimeout(window.__night);window.__night=setTimeout(()=>{o.style.display='none';game.classList.remove('nightMode')},15000)}
+function eventStorm(){const o=document.getElementById('stormOverlay');o.style.display='block';game.classList.add('storming','shake');eventClock(10000,'⚡ Гроза');say('⚡ Началась гроза!');clearTimeout(window.__storm);window.__storm=setTimeout(()=>{o.style.display='none';game.classList.remove('storming','shake')},10000)}
+function eventBlackout(){const o=document.getElementById('blackoutOverlay');o.style.display='block';game.classList.add('blackoutMode');eventClock(8000,'💡 Отключение света');say('💡 В городе отключился свет!');clearTimeout(window.__blackout);window.__blackout=setTimeout(()=>{o.style.display='none';game.classList.remove('blackoutMode')},8000)}
+function eventUFO(){const box=document.getElementById('ufoOverlay');box.innerHTML='<div class="ufo"></div>';const u=box.firstElementChild;u.style.left='-120px';u.style.top='18vh';u.animate([{transform:'translateX(0)'},{transform:'translateX(120vw)'}],{duration:7000,easing:'linear'});box.style.display='block';eventClock(7000,'🛸 НЛО');say('🛸 В небе появился НЛО!');clearTimeout(window.__ufo);window.__ufo=setTimeout(()=>{box.style.display='none';box.innerHTML=''},7200)}
+function eventConfetti(){const box=document.getElementById('confettiOverlay');box.innerHTML='';for(let i=0;i<45;i++){const c=document.createElement('div');c.className='confetti';c.textContent=['🎊','✨','🎉','⭐'][i%4];c.style.left=Math.random()*100+'vw';c.style.animationDelay=Math.random()*1.5+'s';box.appendChild(c)}box.style.display='block';eventClock(5000,'🎊 Конфетти');say('🎊 Праздник в городе!');setTimeout(()=>{box.style.display='none';box.innerHTML=''},5200)}
+function eventPoliceRush(){wanted=Math.max(1,wanted);renderWanted();policeActive=true;policeCar.classList.remove('hidden');document.getElementById('policeNotice').style.display='block';policeCar.classList.add('policeBeacon');say('🚓 Полицейский рейд! Полиция ищет тебя!');eventClock(20000,'🚓 Полицейский рейд');clearTimeout(window.__raid);window.__raid=setTimeout(()=>{if(wanted===0){policeActive=false;policeCar.classList.add('hidden')}policeCar.classList.remove('policeBeacon')},20000)}
+function eventFlood(){const o=document.getElementById('floodOverlay');o.style.display='block';game.classList.add('floodMode');eventClock(14000,'🌊 Наводнение');say('🌊 Улицы затоплены!');clearTimeout(window.__flood);window.__flood=setTimeout(()=>{o.style.display='none';game.classList.remove('floodMode')},14000)}
+function eventTornado(){const o=document.getElementById('tornadoOverlay');o.style.display='block';game.classList.add('shake');eventClock(9000,'🌪️ Торнадо');say('🌪️ Торнадо проходит через город!');clearTimeout(window.__tornado);window.__tornado=setTimeout(()=>{o.style.display='none';game.classList.remove('shake')},9000)}
+function eventHeat(){const o=document.getElementById('heatOverlay');o.style.display='block';game.classList.add('heatMode');eventClock(12000,'🔥 Жара');say('🔥 В городе жара!');clearTimeout(window.__heat);window.__heat=setTimeout(()=>{o.style.display='none';game.classList.remove('heatMode')},12000)}
+function eventSlowTime(){const o=document.getElementById('slowOverlay');o.style.display='block';game.classList.add('slowMode');eventClock(10000,'🕐 Замедление');say('🕐 Время замедлилось!');clearTimeout(window.__slow);window.__slow=setTimeout(()=>{o.style.display='none';game.classList.remove('slowMode')},10000)}
+function eventTeleport(){const o=document.getElementById('teleportOverlay');o.style.display='block';setTimeout(()=>o.style.display='none',450);x=120+Math.random()*2160;y=120+Math.random()*1360;player.style.left=x+'px';player.style.top=y+'px';say('🌀 Телепортация!');}
+function eventMirror(){const o=document.getElementById('mirrorOverlay');o.style.display='block';game.classList.add('mirrorMode');eventClock(9000,'🪞 Перевёрнутый мир');say('🪞 Мир стал странным!');clearTimeout(window.__mirror);window.__mirror=setTimeout(()=>{o.style.display='none';game.classList.remove('mirrorMode')},9000)}
+function eventMeteor(){const box=document.getElementById('meteorOverlay');box.innerHTML='';box.style.display='block';for(let i=0;i<18;i++){const m=document.createElement('div');m.className='meteor';m.style.left=(Math.random()*100)+'vw';m.style.top=(-Math.random()*30)+'vh';m.style.animationDelay=(Math.random()*1.4)+'s';box.appendChild(m)}eventClock(5000,'☄️ Метеоритный дождь');say('☄️ В небе метеоритный дождь!');clearTimeout(window.__meteor);window.__meteor=setTimeout(()=>{box.style.display='none';box.innerHTML=''},5200)}
+function eventLights(){const o=document.getElementById('partyLights');o.style.display='block';game.classList.add('lightsMode');eventClock(10000,'💡 Световое шоу');say('💡 Началось световое шоу!');clearTimeout(window.__lights);window.__lights=setTimeout(()=>{o.style.display='none';game.classList.remove('lightsMode')},10000)}
+const oldEventReset=window.eventReset;
+window.eventReset=function(){oldEventReset();document.getElementById('rainOverlay').style.display='none';document.getElementById('fogOverlay').style.display='none';document.getElementById('moneyRain').style.display='none';document.getElementById('moneyRain').innerHTML='';game.classList.remove('lowGravity','trafficJam','partyPulse','nightMode','storming','blackoutMode');document.getElementById('eventTimer').style.display='none';document.getElementById('nightOverlay').style.display='none';document.getElementById('stormOverlay').style.display='none';document.getElementById('blackoutOverlay').style.display='none';document.getElementById('ufoOverlay').style.display='none';document.getElementById('confettiOverlay').style.display='none';document.getElementById('ufoOverlay').innerHTML='';document.getElementById('confettiOverlay').innerHTML='';clearInterval(window.__eventClock);clearTimeout(window.__fog);clearTimeout(window.__gravity);clearTimeout(window.__traffic);clearTimeout(window.__party);clearTimeout(window.__night);clearTimeout(window.__storm);clearTimeout(window.__blackout);clearTimeout(window.__ufo);clearTimeout(window.__raid);clearTimeout(window.__flood);clearTimeout(window.__tornado);clearTimeout(window.__heat);clearTimeout(window.__slow);clearTimeout(window.__mirror);clearTimeout(window.__meteor);clearTimeout(window.__lights);document.getElementById('floodOverlay').style.display='none';document.getElementById('tornadoOverlay').style.display='none';document.getElementById('heatOverlay').style.display='none';document.getElementById('slowOverlay').style.display='none';document.getElementById('teleportOverlay').style.display='none';document.getElementById('mirrorOverlay').style.display='none';document.getElementById('meteorOverlay').style.display='none';document.getElementById('partyLights').style.display='none';document.getElementById('meteorOverlay').innerHTML='';game.classList.remove('floodMode','heatMode','slowMode','mirrorMode','lightsMode');say('🔄 Все события сброшены')};
+setInterval(()=>{
+ const d=Math.hypot(x-450,y-330);
+ if(d<300 && !inCar && !arrested){money+=50;moneyEl.textContent=money;const sm=document.getElementById("shopMoney");if(sm)sm.textContent=money;say("🏦 Банк: +50 денег")}
+},15000);
+
+
+/* ================= MULTIPLAYER =================
+   Set MP_SERVER to your deployed WebSocket server URL.
+   Example: wss://your-server.example.com
+================================================= */
+let MP_SERVER = localStorage.getItem("sandbox2_mp_server") || "ws://localhost:8080";
+let mpSocket=null, mpOnline=false, mpRoomCode="", mpMyId="", mpName="Игрок";
+let mpRemote={};
+let mpLastSend=0, mpOffline=false;
+
+function openMP(){
+  document.getElementById("mpMenu").classList.remove("mp-hidden");
+  document.getElementById("menu").classList.add("hidden");
+}
+function mpStatus(t){
+  const e=document.getElementById("mpStatus"); if(e)e.textContent=t;
+}
+
+
+async function mpLandscape(){
+  try{
+    if(document.documentElement.requestFullscreen && !document.fullscreenElement){
+      await document.documentElement.requestFullscreen();
+    }
+    if(screen.orientation && screen.orientation.lock){
+      await screen.orientation.lock("landscape");
+      mpStatus("Альбомный режим включён.");
+      return;
+    }
+    mpStatus("Поверни телефон боком — меню уже адаптировано.");
+  }catch(e){
+    mpStatus("Поверни телефон боком. Меню автоматически подстроится.");
+  }
+}
+
+function mpInitServerInput(){
+  const e=document.getElementById("mpServer");
+  if(e) e.value=MP_SERVER;
+}
+function mpSaveServer(){
+  let v=(document.getElementById("mpServer").value||"").trim();
+  if(!v){mpStatus("Введи адрес сервера, например wss://мой-сервер.onrender.com");return}
+  v=v.replace(/\/+$/,"");
+  if(!/^wss?:\/\//i.test(v)){
+    if(/^https?:\/\//i.test(v)) v=v.replace(/^http:/i,"ws:").replace(/^https:/i,"wss:");
+    else v="wss://"+v;
+  }
+  MP_SERVER=v;
+  localStorage.setItem("sandbox2_mp_server",MP_SERVER);
+  mpStatus("Адрес сохранён: "+MP_SERVER);
+}
+mpInitServerInput();
+
+function mpCreate(){
+  mpSaveServer();
+  mpName=(document.getElementById("mpName").value||"Игрок").trim().slice(0,16);
+  if(!mpName) mpName="Игрок";
+  mpConnect("create");
+}
+function mpJoin(){
+  mpSaveServer();
+  mpName=(document.getElementById("mpName").value||"Игрок").trim().slice(0,16);
+  mpRoomCode=(document.getElementById("mpCodeInput").value||"").trim().toUpperCase();
+  if(!mpRoomCode)return mpStatus("Введи код комнаты.");
+  mpConnect("join");
+}
+function mpConnect(mode){
+  if(!/^wss?:\/\//.test(MP_SERVER)){
+    mpStatus("Сначала введи адрес сервера, например wss://мой-сервер.onrender.com");
+    return;
+  }
+  mpStatus("Подключение к серверу...");
+  try{mpSocket=new WebSocket(MP_SERVER)}catch(e){mpStatus("Ошибка подключения.");return}
+  mpSocket.onopen=()=>{
+    mpOnline=true; mpOffline=false;
+    mpSocket.send(JSON.stringify({type:mode,name:mpName,room:mpRoomCode}));
+    mpStatus("Подключено. Создаём комнату...");
+  };
+  mpSocket.onmessage=e=>{
+    let m; try{m=JSON.parse(e.data)}catch{return}
+    mpHandle(m);
+  };
+  mpSocket.onclose=()=>{
+    mpOnline=false;
+    document.getElementById("mpBadge").classList.add("mp-hidden");
+    mpStatus("Соединение потеряно. Можно играть без сети.");
+    Object.values(mpRemote).forEach(p=>p.el?.remove()); mpRemote={};
+    updateMPHud();
+  };
+  mpSocket.onerror=()=>mpStatus("Не удалось подключиться к серверу.");
+}
+function mpHandle(m){
+  if(m.type==="room"){
+    mpRoomCode=m.room; mpMyId=m.id;
+    document.getElementById("mpRoom").textContent="Код: "+mpRoomCode;
+    document.getElementById("mpStatus").textContent="Комната готова. Подключай друга этим кодом.";
+    document.getElementById("mpBadge").classList.remove("mp-hidden");
+    document.getElementById("mpPlayersHud").classList.remove("mp-hidden");
+    if(game.classList.contains("hidden"))startGame();
+    updateMPHud(m.players||[]);
+  } else if(m.type==="state"){
+    if(m.id===mpMyId)return;
+    let p=mpRemote[m.id];
+    if(!p){
+      const el=document.createElement("div");
+      el.className="remotePlayer";
+      const nm=document.createElement("div"); nm.className="remoteName"; el.appendChild(nm);
+      world.appendChild(el); p=mpRemote[m.id]={el,name:m.name||"Игрок"};
+    }
+    p.name=m.name||p.name; p.el.querySelector(".remoteName").textContent=p.name;
+    p.el.style.left=m.x+"px"; p.el.style.top=m.y+"px";
+    p.el.style.transform="rotate("+(m.angle||0)+"deg)";
+  } else if(m.type==="players"){
+    const alive=new Set((m.players||[]).map(p=>p.id));
+    Object.keys(mpRemote).forEach(id=>{if(!alive.has(id)){mpRemote[id].el.remove();delete mpRemote[id]}});
+    updateMPHud(m.players||[]);
+  } else if(m.type==="event"){
+    // Server can broadcast an admin event to everyone.
+    if(typeof window[m.name]==="function") window[m.name]();
+  } else if(m.type==="message"){
+    say(m.text||"");
+  }
+}
+function updateMPHud(players){
+  const arr=players||Object.values(mpRemote);
+  const count=document.getElementById("mpCount"); if(count)count.textContent=Math.max(1,arr.length);
+  const box=document.getElementById("mpPlayers"); if(box){
+    const names=arr.map(p=>p.name||"Игрок");
+    if(!names.includes(mpName))names.unshift(mpName);
+    box.textContent="Игроки: "+[...new Set(names)].join(", ");
+  }
+}
+function mpSendState(force=false){
+  if(!mpOnline||!mpSocket||mpSocket.readyState!==1)return;
+  const now=Date.now();
+  if(!force && now-mpLastSend<50)return;
+  mpLastSend=now;
+  mpSocket.send(JSON.stringify({
+    type:"state",id:mpMyId,name:mpName,x,y,angle:carAngle,
+    inCar,hp,money,wanted
+  }));
+}
+function mpPlayOffline(){
+  mpOffline=true; mpOnline=false;
+  document.getElementById("mpMenu").classList.add("mp-hidden");
+  document.getElementById("menu").classList.remove("hidden");
+  startGame();
+  say("🎮 Оффлайн-режим");
+}
+/* Send local state from a separate timer to avoid changing the original game loop. */
+setInterval(()=>{if(!game.classList.contains("hidden"))mpSendState()},50);
+
+/* Multiplayer-safe wrappers for actions that should affect everyone.
+   The server is authoritative for these broadcasts. */
+function mpBroadcastEvent(name){
+  if(mpOnline&&mpSocket?.readyState===1)
+    mpSocket.send(JSON.stringify({type:"adminEvent",name}));
+}
+const _say=say;
+window.say=function(t){_say(t)};
+
+document.getElementById("mpCodeInput").addEventListener("input",e=>{
+  e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+});
+
+
+/* Broadcast admin events when online. */
+[
+"eventRainbow","eventEarthquake","eventJump","eventRain","eventFog","eventLowGravity",
+"eventMoneyRain","eventTraffic","eventParty","eventNight","eventStorm","eventBlackout",
+"eventUFO","eventConfetti","eventPoliceRush","eventFlood","eventTornado","eventHeat",
+"eventSlowTime","eventTeleport","eventMirror","eventMeteor","eventLights"
+].forEach(fn=>{
+  const old=window[fn];
+  if(typeof old==="function") window[fn]=function(...a){
+    const r=old.apply(this,a);
+    mpBroadcastEvent(fn);
+    return r;
+  };
+});
+
+</script>
+</body>
+</html>
